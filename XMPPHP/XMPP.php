@@ -223,27 +223,75 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
      * @param string $show
      * @param string $to
      */
-    public function presence($status = null, $show = 'available', $to = null, $type='available', $priority=null) {
-        if($type == 'available') $type = '';
-        $to     = htmlspecialchars($to);
-        $status = htmlspecialchars($status);
+    public function presence($status = null, $show = 'available', $to = null, $type = null, $priority = null) {
+        
+        // Test if show is unavailable
         if($show == 'unavailable') $type = 'unavailable';
         
-        $out = "<presence";
-        if($to) $out .= " to=\"$to\"";
-        if($type) $out .= " type='$type'";
-        if($show == 'available' and !$status and $priority !== null) {
-            $out .= "/>";
-        } else {
-            $out .= ">";
-            if($show != 'available') $out .= "<show>$show</show>";
-            if($status) $out .= "<status>$status</status>";
-            if($priority !== null) $out .= "<priority>$priority</priority>";
-            $out .= "</presence>";
+        // Create a new DOMDocument object
+        $dom = new DOMDocument('1.0', 'utf-8');      // SEEMS DEPRECATED
+        
+        // SHOULD USE
+        // $x = new DOMImplementation();
+        // $dom = $x->createDocument(NULL,"rootElementName");
+        // $dom->xmlVersion="1.0";
+        // $dom->xmlEncoding="UTF-8";
+        
+        // cf for more details :
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementation
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationList
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationSource
+        
+        // Create a new element <presence>.
+        $presence = $dom->createElement('presence');
+        
+        // Create a new atribute 'to' which takes as value $to as a recipient
+        $presenceTo = $dom->createAttribute('to');
+        $presenceTo->value = $to;
+        $presence->appendChild($presenceTo);
+        
+        // Manage the type
+        if($type && $type != 'available'){
+            $presenceType = $dom->createAttribute('type');
+            $presenceType->value = $type;
+            $presence->appendChild($presenceType);
         }
         
-        $this->send($out);
+        // Nothing is done if show is available and no status is present and a priority is set
+        if($show == 'available' and empty($status) and $priority !== null) {
+            
+        } else {
+            
+            // Manage the show
+            if($show != 'available'){
+                $presenceShow = $dom->createElement('show');
+                $presenceShowContent = $dom->createTextNode($show);
+                $presenceShow->appendChild($presenceShowContent);
+                $presence->appendChild($presenceShow);
+            }
+            
+            // Manage the status
+            if(!empty($status)){
+                $presenceStatus = $dom->createElement('status');
+                $presenceStatusContent = $dom->createTextNode($status);
+                $presenceStatus->appendChild($presenceStatusContent);
+                $presence->appendChild($presenceStatus);
+            }
+            
+            // Manage the priority
+                if(!empty($priority)){
+                $presencePriority = $dom->createElement('priority');
+                $presencePriorityContent = $dom->createTextNode($priority);
+                $presencePriority->appendChild($presencePriorityContent);
+                $presence->appendChild($presencePriority);
+            }
+        }
+        
+        // Insert the recently created element <presence> as root of the DOM document and save it
+        $dom->appendChild($presence);
+        $this->send($dom->saveXML());
     }
+
     /**
      * Send Auth request
      *
