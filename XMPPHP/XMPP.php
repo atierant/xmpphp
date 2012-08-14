@@ -161,23 +161,59 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
      * @param string $type
      * @param string $subject
      */
-    public function message($to, $body, $type = 'chat', $subject = null, $payload = null) {
-        if(is_null($type))
-        {
-            $type = 'chat';
+    public function message($to, $body, $type = 'chat', $subject = null) {
+        
+        if(empty($type)) throw new Exception("provided type is empty");
+        
+        // Create a new DOMDocument object
+        $dom = new DOMDocument('1.0', 'utf-8');      // SEEMS DEPRECATED
+        
+        // SHOULD USE
+        // $x = new DOMImplementation();
+        // $dom = $x->createDocument(NULL,"rootElementName");
+        // $dom->xmlVersion="1.0";
+        // $dom->xmlEncoding="UTF-8";
+        
+        // cf for more details :
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementation
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationList
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationSource
+        
+        // Create a new element <message>.
+        $message = $dom->createElement('message');
+        
+        // Create a new attribute 'from' which takes as value {$this->fulljid}
+        $msgFrom = $dom->createAttribute('from');
+        $msgFrom->value = {$this->fulljid};
+        $message->appendChild($msgFrom);
+        
+        // Create a new atribute 'to' which takes as value $to
+        $msgTo = $dom->createAttribute('to');
+        $msgTo->value = $to;
+        $message->appendChild($msgTo);
+        
+        // Create a new attribute 'type' which takes as value $type
+        $msgType = $dom->createAttribute('type');
+        $msgType->value = $type;
+        $message->appendChild($msgType);
+        
+        // If a $subject is given, then append in the element <message> a new element <subject> which value is $subject
+        if($subject){
+            $msgSubject = $dom->createElement('subject');
+            $msgSubjectContent = $dom->createTextNode($subject);
+            $msgSubject->appendChild($msgSubjectContent);
+            $message->appendChild($msgSubject);
         }
         
-        $to      = htmlspecialchars($to);
-        $body    = htmlspecialchars($body);
-        $subject = htmlspecialchars($subject);
+        // Append in the element <message> a new element <body> which value is $body;
+        $msgBody = $dom->createElement('body');
+        $msgBodyContent = $dom->createTextNode($body);
+        $msgBody->appendChild($msgBodyContent);
+        $message->appendChild($msgBody);
         
-        $out = "<message from=\"{$this->fulljid}\" to=\"$to\" type='$type'>";
-        if($subject) $out .= "<subject>$subject</subject>";
-        $out .= "<body>$body</body>";
-        if($payload) $out .= $payload;
-        $out .= "</message>";
-        
-        $this->send($out);
+        // Insert the recently created element <message> as root of the DOM document and save it
+        $dom->appendChild($message);
+        $this->send($dom->saveXML());
     }
 
     /**
