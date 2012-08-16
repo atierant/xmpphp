@@ -184,7 +184,7 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
         
         // Create a new attribute 'from' which takes as value {$this->fulljid}
         $msgFrom = $dom->createAttribute('from');
-        $msgFrom->value = {$this->fulljid};
+        $msgFrom->value = $this->fulljid;
         $message->appendChild($msgFrom);
         
         // Create a new atribute 'to' which takes as value $to
