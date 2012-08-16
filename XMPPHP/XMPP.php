@@ -298,8 +298,42 @@ class XMPPHP_XMPP extends XMPPHP_XMLStream {
      * @param string $jid
      */
     public function subscribe($jid) {
-        $this->send("<presence type='subscribe' to='{$jid}' from='{$this->fulljid}' />");
-        #$this->send("<presence type='subscribed' to='{$jid}' from='{$this->fulljid}' />");
+        
+        // Create a new DOMDocument object
+        $dom = new DOMDocument('1.0', 'utf-8');      // SEEMS DEPRECATED
+        
+        // SHOULD USE
+        // $x = new DOMImplementation();
+        // $dom = $x->createDocument(NULL,"rootElementName");
+        // $dom->xmlVersion="1.0";
+        // $dom->xmlEncoding="UTF-8";
+        
+        // cf for more details :
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementation
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationList
+        // http://w3.org/TR/DOM-Level-3-Core/core.html#DOMImplementationSource
+        
+        // Create a new element <presence>.
+        $presence = $dom->createElement('presence');
+        
+        // Create a new atribute 'type' which takes as value $type
+        $presenceType = $dom->createAttribute('type');
+        $presenceType->value = 'subscribe'; // subscribed
+        $presence->appendChild($presenceType);
+        
+        // Create a new atribute 'to' which takes as value $jid as recipient
+        $presenceTo = $dom->createAttribute('to');
+        $presenceTo->value = $jid;
+        $presence->appendChild($presenceTo);
+        
+        // Create a new atribute 'from' which takes as value $this->fulljid as sender
+        $presenceFrom = $dom->createAttribute('from');
+        $presenceFrom->value = $this->fulljid;
+        $presence->appendChild($presenceFrom);
+        
+        // Insert the recently created element <presence> as root of the DOM document and save it
+        $dom->appendChild($presence);
+        $this->send($dom->saveXML());
     }
 
     /**
